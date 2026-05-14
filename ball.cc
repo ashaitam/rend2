@@ -29,3 +29,8 @@ bool Ball::is_valid() const {
 
     return true;
 }
+
+void Ball::draw() const
+{
+    circle.draw(BLACK);
+}

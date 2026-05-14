@@ -7,7 +7,8 @@ LDLIBS   := $(shell pkg-config --libs $(PKGS))
 
 BUILD_DIR := build
 
-CXXFILES := graphic.cc project.cc gui.cc
+
+CXXFILES := graphic.cc project.cc gui.cc game.cc ball.cc brick.cc paddle.cc tools.cc message.cc
 OFILES   := $(addprefix $(BUILD_DIR)/, $(CXXFILES:.cc=.o))
 
 .PHONY: all clean tests
@@ -20,6 +21,7 @@ $(BUILD_DIR)/%.o: %.cc
 	@$(CXX) $(CXXFLAGS) $(LINKING) -c $< -o $@
 
 $(OUT): $(OFILES)
+	@echo "Linking $(OUT)..."
 	@$(CXX) $(CXXFLAGS) $(LINKING) $^ -o $@ $(LDLIBS)
 
 clean:

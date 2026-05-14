@@ -14,6 +14,9 @@ class Ball {
     Circle get_circle() const;
     Point get_delta() const;
     bool is_valid() const;
+
+    void draw() const;
+
     private : 
     Circle circle;
     Point delta;

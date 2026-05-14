@@ -1,3 +1,5 @@
+#include "graphic.h"
+
 #ifndef TOOLS_H
 #define TOOLS_H
 
@@ -9,6 +11,7 @@ struct Point {
 
     Point(double x_init = 0.0, double y_init = 0.0) 
         : x(x_init), y(y_init) {}
+    
 };
 
 struct Circle {
@@ -17,6 +20,8 @@ struct Circle {
 
     Circle(Point c_init = Point(), double r_init = 0.0)
         : center(c_init), radius(r_init) {}
+
+    void draw(Color color) const;
 };
 
 struct Square {
@@ -25,6 +30,8 @@ struct Square {
 
     Square(Point c_init = Point(), double s_init = 0.0)
         : center(c_init), side(s_init) {}
+
+    void draw(Color color) const;
 };
 
 // Prototypes des fonctions
@@ -39,5 +46,10 @@ bool intersects(const Circle& c1, const Circle& c2);
 
 bool intersects(const Circle& c, const Square& s);
 bool intersects(const Square& s, const Circle& c);
+
+bool intersects_with_epsil(const Square& s1, const Square& s2);
+bool intersects_with_epsil(const Circle& c1, const Circle& c2);
+bool intersects_with_epsil(const Circle& c, const Square& s);
+bool intersects_with_epsil(const Square& s, const Circle& c);
 
 #endif

@@ -1,9 +1,11 @@
+#include <cmath>
 #include "graphic.h"
 #include "graphic_gui.h"
 
 using namespace std;
 
 static const Cairo::RefPtr<Cairo::Context> *ptcr(nullptr);
+constexpr double pi = 3.14159265358979323846;
 
 // graphic_gui.h
 void graphic_set_context(const Cairo::RefPtr<Cairo::Context> &cr)
@@ -55,4 +57,33 @@ void set_color(Color color)
         break;
     }
     (*ptcr)->set_source_rgb(r, g, b);
+}
+
+void draw_circle(double x, double y, double radius, Color color)
+{
+    set_color(color);
+    (*ptcr)->arc(x, y, radius, 0, 2 * pi);
+    (*ptcr)->fill();
+}
+
+void draw_square(double x, double y, double side, Color color)
+{
+    set_color(color);
+    (*ptcr)->rectangle(x - side/2, y - side/2, side, side);
+    (*ptcr)->fill();
+}
+
+void draw_arc(double x, double y, double radius, double angle_start, double angle_end, Color color)
+{
+    set_color(color);
+    (*ptcr)->arc(x, y, radius, angle_start, angle_end);
+    (*ptcr)->stroke();
+}
+
+void draw_square_outline(double x, double y, double side, Color color)
+{
+    set_color(color);
+    (*ptcr)->set_line_width(0.7);
+    (*ptcr)->rectangle(x - side/2, y - side/2, side, side);
+    (*ptcr)->stroke();
 }

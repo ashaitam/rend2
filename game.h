@@ -7,6 +7,7 @@
 #include "paddle.h"
 #include "constants.h"
 #include "message.h"
+#include "graphic.h"
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -36,6 +37,10 @@ class Game {
 
     bool load(const std::string& file_name);
     bool save(const std::string& file_name) const;
+
+    void draw() const;
+
+    void update_paddle_pos(double new_x);
 
 
 

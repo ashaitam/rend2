@@ -14,4 +14,11 @@ enum Color
     GREY,
     WHITE,
 };
+
+void draw_circle(double x, double y, double radius, Color color);
+void draw_square(double x, double y, double side, Color color);
+void draw_arc(double x, double y, double radius, double angle_start, double angle_end, Color color);
+void draw_square_outline(double x, double y, double side, Color color);
+
+
 #endif
