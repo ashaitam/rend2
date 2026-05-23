@@ -17,6 +17,8 @@ class Paddle {
         // Retourne vrai si la raquette est correctement positionnée
         bool is_valid() const;
 
+        void draw() const;
+
     private:
         // Cercle représentant la géométrie de la raquette
         Circle circle;

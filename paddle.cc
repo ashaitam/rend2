@@ -39,3 +39,8 @@ bool Paddle::is_valid() const
     return true;
 }
 
+void Paddle::draw() const
+{
+    constexpr double pi = 3.14159265358979323846;
+    draw_arc(circle.center.x, circle.center.y, circle.radius, 0, pi, BLACK);
+}

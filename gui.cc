@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <iostream>
+#include <algorithm>
 #include "constants.h"
 #include "graphic_gui.h"
 #include "gui.h"
@@ -12,6 +13,7 @@ enum Response
     OPEN_FILE,
     SAVE_FILE
 };
+
 enum Buttons
 {
     EXIT,
@@ -44,8 +46,24 @@ My_window::My_window(string file_name)
     set_mouse_controller();
     set_infos();
     set_drawing();
-    // TODO: set the game
+
+    load_success = false;
+    paddle_target_x = 0.0;
+    if (!file_name.empty())
+    {
+        last_file = file_name;
+        load_success = game.load(file_name);
+        if (!load_success && !filesystem::exists(file_name))
+        {
+            last_file.clear();
+        }
+        sync_paddle_target();
+    }
+
+    update_infos();
+    update_button_states();
 }
+
 void My_window::set_commands()
 {
     for (auto &button : buttons)
@@ -73,53 +91,70 @@ void My_window::exit_clicked()
 {
     hide();
 }
+
 void My_window::open_clicked()
 {
     auto dialog = new Gtk::FileChooserDialog("Choose a text file",
                                              Gtk::FileChooserDialog::Action::OPEN);
     set_dialog(dialog);
 }
+
 void My_window::save_clicked()
 {
     auto dialog = new Gtk::FileChooserDialog("Choose a text file",
                                              Gtk::FileChooserDialog::Action::SAVE);
     set_dialog(dialog);
 }
+
 void My_window::restart_clicked()
 {
-    cout << __func__ << endl; // TODO: reset the game from the last read file
+    if (!last_file.empty())
+    {
+        load_success = game.load(last_file);
+        sync_paddle_target();
+        update_infos();
+        drawing.queue_draw();
+        update_button_states();
+    }
 }
+
 void My_window::start_clicked()
 {
-    cout << __func__ << endl;
+    if (!load_success || game.get_status() != ON_GOING)
+    {
+        return;
+    }
+
     if (loop_activated)
     {
         loop_conn.disconnect();
         loop_activated = false;
-        buttons[EXIT].set_sensitive(true);
-        buttons[OPEN].set_sensitive(true);
-        buttons[SAVE].set_sensitive(true);
-        buttons[RESTART].set_sensitive(true);
         buttons[START].set_label("start");
-        buttons[STEP].set_sensitive(true);
     }
-    else // TODO: only if the game is not finished
+    else
     {
         loop_conn =
             Glib::signal_timeout().connect(sigc::mem_fun(*this, &My_window::loop), dt);
         loop_activated = true;
-        buttons[EXIT].set_sensitive(false);
-        buttons[OPEN].set_sensitive(false);
-        buttons[SAVE].set_sensitive(false);
-        buttons[RESTART].set_sensitive(false);
         buttons[START].set_label("stop");
-        buttons[STEP].set_sensitive(false);
     }
+    update_button_states();
 }
+
 void My_window::step_clicked()
 {
-    cout << __func__ << endl; // TODO: make a single update
+    if (!load_success || game.get_status() != ON_GOING)
+    {
+        return;
+    }
+
+	game.update_paddle_pos(paddle_target_x);
+	game.update();
+	update_infos();
+	drawing.queue_draw();
+	update_button_states();
 }
+
 void My_window::set_key_controller()
 {
     auto contr = Gtk::EventControllerKey::create();
@@ -127,19 +162,32 @@ void My_window::set_key_controller()
                                         false);
     add_controller(contr);
 }
+
 bool My_window::key_pressed(guint keyval, guint keycode, Gdk::ModifierType state)
 {
     switch (keyval)
     {
     case '1':
-        // TODO: make a single update
-        return true;
+        if (buttons[STEP].get_sensitive())
+        {
+            step_clicked();
+            return true;
+        }
+        break;
     case 's':
-        // TODO: pause or unpause the game
-        return true;
+        if (buttons[START].get_sensitive())
+        {
+            start_clicked();
+            return true;
+        }
+        break;
     case 'r':
-        // TODO: reset the game from the last read file
-        return true;
+        if (buttons[RESTART].get_sensitive())
+        {
+            restart_clicked();
+            return true;
+        }
+        break;
     default:
         break;
     }
@@ -179,6 +227,7 @@ void My_window::set_dialog(Gtk::FileChooserDialog *dialog)
 
     dialog->show();
 }
+
 void My_window::dialog_response(int response, Gtk::FileChooserDialog *dialog)
 {
     filesystem::path file_name = "";
@@ -190,6 +239,7 @@ void My_window::dialog_response(int response, Gtk::FileChooserDialog *dialog)
             file_name = "";
         }
     }
+
     switch (response)
     {
     case CANCEL:
@@ -198,14 +248,19 @@ void My_window::dialog_response(int response, Gtk::FileChooserDialog *dialog)
     case OPEN_FILE:
         if (file_name != "")
         {
-            cout << "open file " << file_name << endl; // TODO: set game from a file
+            last_file = file_name.string();
+            load_success = game.load(last_file);
+            sync_paddle_target();
+            update_infos();
+            drawing.queue_draw();
+            update_button_states();
             dialog->hide();
         }
         break;
     case SAVE_FILE:
         if (file_name != "")
         {
-            cout << "save file " << file_name << endl; // TODO: save the game
+            game.save(file_name.string());
             dialog->hide();
         }
         break;
@@ -218,7 +273,10 @@ bool My_window::loop()
 {
     if (loop_activated)
     {
-        // TODO: update the game and the interface
+	game.update_paddle_pos(paddle_target_x);
+	game.update();
+	update_infos();
+	drawing.queue_draw();
         return true;
     }
     return false;
@@ -240,12 +298,11 @@ void My_window::set_infos()
 }
 
 void My_window::update_infos()
-// TODO: update the different counters
 {
-    for (auto &value : info_value)
-    {
-        value.set_text("0");
-    }
+    info_value[0].set_text(std::to_string(game.get_score()));
+    info_value[1].set_text(std::to_string(game.get_lives()));
+    info_value[2].set_text(std::to_string(game.get_nb_bricks()));
+    info_value[3].set_text(std::to_string(game.get_nb_balls()));
 }
 
 void My_window::set_drawing()
@@ -255,13 +312,18 @@ void My_window::set_drawing()
     drawing.set_expand();
     drawing.set_draw_func(sigc::mem_fun(*this, &My_window::on_draw));
 }
+
 void My_window::on_draw(const Cairo::RefPtr<Cairo::Context> &cr, int width, int height)
 {
     graphic_set_context(cr);
-    double side(min(width, height));
-    cr->translate((width - side) / 2, (height + side) / 2);
-    cr->scale(side / (arena_size), -side / (arena_size));
-    // TODO: draw the game
+    cr->set_source_rgb(1.0, 1.0, 1.0);
+    cr->paint();
+
+    double side = std::min(width, height);
+    cr->translate((width - side) / 2.0, (height + side) / 2.0);
+    cr->scale(side / arena_size, -side / arena_size);
+
+    game.draw();
 }
 
 void My_window::set_mouse_controller()
@@ -278,11 +340,48 @@ void My_window::set_mouse_controller()
     drawing.add_controller(left_click);
     drawing.add_controller(move);
 }
+
 void My_window::on_drawing_left_click(int n_press, double x, double y)
 {
-    cout << __func__ << endl; // TODO
 }
+
 void My_window::on_drawing_move(double x, double y)
 {
-    cout << __func__ << endl; // TODO
+    double width = (double)drawing.get_width();
+    double height = (double)drawing.get_height();
+    double side = std::min(width, height);
+
+    double x_game = (x - (width - side) / 2.0) * (arena_size / side);
+
+    if (x_game < 0.0)
+    {
+        x_game = 0.0;
+    }
+    else if (x_game > arena_size)
+    {
+        x_game = arena_size;
+    }
+
+    paddle_target_x = x_game;
+}
+
+void My_window::sync_paddle_target()
+{
+    const Paddle* paddle = game.get_paddle();
+    if (paddle != nullptr)
+    {
+        paddle_target_x = paddle->get_circle().center.x;
+    }
+}
+
+void My_window::update_button_states()
+{
+    const bool has_file = !last_file.empty();
+
+    buttons[EXIT].set_sensitive(!loop_activated);
+    buttons[OPEN].set_sensitive(!loop_activated);
+    buttons[SAVE].set_sensitive(load_success && !loop_activated);
+    buttons[RESTART].set_sensitive(has_file && !loop_activated);
+    buttons[START].set_sensitive((game.get_status() == ON_GOING) && load_success);
+    buttons[STEP].set_sensitive((game.get_status() == ON_GOING) && load_success && !loop_activated);
 }

@@ -4,6 +4,7 @@
 #include <array>
 #include <gtkmm.h>
 #include <string>
+#include "game.h"
 
 
 class My_window : public Gtk::Window
@@ -47,6 +48,14 @@ private:
     void set_mouse_controller();
     void on_drawing_left_click(int n_press, double x, double y);
     void on_drawing_move(double x, double y);
-};
+
+    void update_button_states();
+    void sync_paddle_target();
+
+    bool load_success;
+    double paddle_target_x;
+    Game game;
+    std::string last_file;
+};  
 
 #endif

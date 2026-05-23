@@ -7,11 +7,20 @@
 #include "paddle.h"
 #include "constants.h"
 #include "message.h"
+#include "graphic.h"
 #include <iostream>
 #include <vector>
 #include <memory>
 #include <fstream>
 #include <sstream>
+
+enum Status
+{
+    ON_GOING,
+    WON,
+    LOST
+};
+
 
 class Game {
     public : 
@@ -26,6 +35,7 @@ class Game {
 
     int get_score() const;
     int get_lives() const;
+    Status get_status() const;
     std::size_t get_nb_bricks() const;
     std::size_t get_nb_balls() const;
     const Paddle* get_paddle() const;
@@ -37,6 +47,10 @@ class Game {
     bool load(const std::string& file_name);
     bool save(const std::string& file_name) const;
 
+    void draw() const;
+
+    void update_paddle_pos(double new_x);
+    void update();
 
 
     private : 
@@ -44,10 +58,14 @@ class Game {
         int score;
         int lives;
 
+        Status status;
+
         // Entites en jeu.
         std::unique_ptr<Paddle> paddle;
         std::vector<std::unique_ptr<Brick>> bricks;
         std::vector<Ball> balls;
-};
+
+        void update_status() ;
+};      
 
 #endif
