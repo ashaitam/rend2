@@ -47,4 +47,9 @@ bool intersects(const Circle& c1, const Circle& c2);
 bool intersects(const Circle& c, const Square& s);
 bool intersects(const Square& s, const Circle& c);
 
+bool intersects_with_epsil(const Square& s1, const Square& s2);
+bool intersects_with_epsil(const Circle& c1, const Circle& c2);
+bool intersects_with_epsil(const Circle& c, const Square& s);
+bool intersects_with_epsil(const Square& s, const Circle& c);
+
 #endif

@@ -1,4 +1,5 @@
 #include "game.h"
+#include <cmath>
 
 bool read_data(std::ifstream& file, std::string& line)
 {
@@ -43,7 +44,7 @@ Game::Game(int score_init, int lives_init)
     : score(score_init), lives(lives_init), paddle(nullptr) {}
 
 Game::Game() 
-    : score(0), lives(0), paddle(nullptr), balls(), bricks() {}
+    : score(0), lives(0), paddle(nullptr), bricks(), balls() {}
 
 
 bool Game::add_brick(std::unique_ptr<Brick> b)
@@ -205,8 +206,8 @@ bool Game::load(const std::string& file_name)
     std::string line;
     std::istringstream iss;
 
-    int score_read;
-    int lives_read;
+    int score_read(0);
+    int lives_read(0);
     
     if (!read_data(file,line))
     {
@@ -216,7 +217,11 @@ bool Game::load(const std::string& file_name)
 
     iss.clear();
     iss.str(line);
-    iss >> score_read;
+    if (!(iss >> score_read))
+    {
+        clear();
+        return false;
+    }
 
     if  (score_read < 0)
     {
@@ -231,7 +236,11 @@ bool Game::load(const std::string& file_name)
 
     iss.clear();
     iss.str(line);
-    iss >> lives_read;
+    if (!(iss >> lives_read))
+    {
+        clear();
+        return false;
+    }
 
     if (lives_read < 0)
     {
@@ -243,9 +252,9 @@ bool Game::load(const std::string& file_name)
     score = score_read;
     lives = lives_read;
 
-    double x;
-    double y;
-    double r;
+    double x(0.0);
+    double y(0.0);
+    double r(0.0);
 
     if (!read_data(file,line))
     {   
@@ -255,7 +264,11 @@ bool Game::load(const std::string& file_name)
     
     iss.clear();
     iss.str(line);
-    iss >> x >> y >> r;
+    if (!(iss >> x >> y >> r))
+    {
+        clear();
+        return false;
+    }
 
     Point center(x,y);
     Circle circle(center,r);
@@ -267,7 +280,7 @@ bool Game::load(const std::string& file_name)
         return false;
     }
 
-    int nb_bricks;
+    int nb_bricks(0);
 
     if (!read_data(file, line))
     {
@@ -277,14 +290,18 @@ bool Game::load(const std::string& file_name)
 
     iss.clear();
     iss.str(line);
-    iss >> nb_bricks;
+    if (!(iss >> nb_bricks) || nb_bricks < 0)
+    {
+        clear();
+        return false;
+    }
 
     for (int i = 0; i < nb_bricks; ++i)
     {   
-        int t;
-        double sx;
-        double sy;
-        double c;
+        int t(0);
+        double sx(0.0);
+        double sy(0.0);
+        double c(0.0);
 
          if (!read_data(file, line))
         {
@@ -294,7 +311,11 @@ bool Game::load(const std::string& file_name)
 
         iss.clear();
         iss.str(line);
-        iss >> t >> sx >> sy >> c;
+        if (!(iss >> t >> sx >> sy >> c))
+        {
+            clear();
+            return false;
+        }
 
         Point center(sx,sy);
         Square square(center,c);
@@ -303,8 +324,12 @@ bool Game::load(const std::string& file_name)
 
         if (t == 0)
         {
-            int h;
-            iss >> h;
+            int h(0);
+            if (!(iss >> h))
+            {
+                clear();
+                return false;
+            }
             brick = std::make_unique<RainbowBrick>(square, h);
          }
 
@@ -334,7 +359,7 @@ bool Game::load(const std::string& file_name)
 
     }
 
-     int nb_balls;
+     int nb_balls(0);
 
     if (!read_data(file, line))
     {
@@ -344,15 +369,19 @@ bool Game::load(const std::string& file_name)
 
     iss.clear();
     iss.str(line);
-    iss >> nb_balls;
+    if (!(iss >> nb_balls) || nb_balls < 0)
+    {
+        clear();
+        return false;
+    }
 
     for (int i = 0; i < nb_balls; ++i)
     {   
-        double x;
-        double y;
-        double r;
-        double dx;
-        double dy;
+        double x(0.0);
+        double y(0.0);
+        double r(0.0);
+        double dx(0.0);
+        double dy(0.0);
 
         if (!read_data(file, line))
         {
@@ -361,7 +390,11 @@ bool Game::load(const std::string& file_name)
         }
         iss.clear();
         iss.str(line);
-        iss >> x >> y >> r >> dx >> dy;
+        if (!(iss >> x >> y >> r >> dx >> dy))
+        {
+            clear();
+            return false;
+        }
 
         Point center(x,y);
         Circle circle(center, r);
@@ -445,4 +478,78 @@ bool Game::save(const std::string& file_name) const
 
     return true;
 
+}
+
+void Game::draw() const
+{
+    draw_square_outline(arena_size/2.0, arena_size/2.0, arena_size, GREY);
+
+    if(paddle != nullptr)
+    {
+        paddle->draw();
+    }
+
+    for(size_t i = 0; i < bricks.size(); ++i)
+    {
+        bricks[i]->draw();
+    }
+
+     for(size_t i = 0; i < balls.size(); ++i)
+    {
+        balls[i].draw();
+    }
+
+}
+
+void Game::update_paddle_pos(double new_x)
+{
+    if (paddle == nullptr)
+    {
+        return;
+    }
+
+    Circle current = paddle->get_circle();
+    double dx = new_x - current.center.x;
+
+    if (std::abs(dx) > delta_norm_max)
+    {
+        dx = (dx > 0.0) ? delta_norm_max : -delta_norm_max;
+    }
+
+    Circle next_circle(Point(current.center.x + dx, current.center.y),
+                       current.radius);
+    double discriminant = next_circle.radius * next_circle.radius
+                          - next_circle.center.y * next_circle.center.y;
+
+    if (discriminant < -epsil_zero)
+    {
+        return;
+    }
+    if (discriminant < 0.0)
+    {
+        discriminant = 0.0;
+    }
+
+    double delta_x = std::sqrt(discriminant);
+    if (next_circle.center.y > 0 ||
+        next_circle.center.y + next_circle.radius <= 0 ||
+        next_circle.center.x - delta_x < 0 ||
+        next_circle.center.x + delta_x > arena_size)
+
+    {
+        return;
+    }
+
+    Paddle moved(next_circle);
+
+    for (size_t i = 0; i < bricks.size(); ++i)
+    {
+        if (intersects_with_epsil(moved.get_circle(),
+                                  bricks[i]->get_square()))
+        {
+            return;
+        }
+    }
+
+    paddle = std::make_unique<Paddle>(moved);
 }

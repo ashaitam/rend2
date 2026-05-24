@@ -13,7 +13,7 @@ class Brick {
         Square get_square() const ;
         int get_type() const ;
         virtual bool is_valid() const ;
-        virtual void draw() const = 0 ;
+        virtual void draw() const = 0 ; //Methode virtuelle pure 
 
     protected : 
         Square square;
