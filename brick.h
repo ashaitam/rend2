@@ -28,6 +28,7 @@ class RainbowBrick : public Brick {
         int get_hit_points() const;
         bool is_valid() const override;
         void draw() const override;
+        void hit();
 
     private :
         int hit_points; //entre 1 et 7

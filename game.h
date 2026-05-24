@@ -14,6 +14,14 @@
 #include <fstream>
 #include <sstream>
 
+enum Status
+{
+    ON_GOING,
+    WON,
+    LOST
+};
+
+
 class Game {
     public : 
     // Etat initial de la partie.
@@ -27,6 +35,7 @@ class Game {
 
     int get_score() const;
     int get_lives() const;
+    Status get_status() const;
     std::size_t get_nb_bricks() const;
     std::size_t get_nb_balls() const;
     const Paddle* get_paddle() const;
@@ -41,18 +50,25 @@ class Game {
     void draw() const;
 
     void update_paddle_pos(double new_x);
+    void update(double paddle_target_x);
 
-
+    void decrease_lives();
 
     private : 
         // Score et vies courants.
         int score;
         int lives;
 
+        Status status;
+
+        Point paddle_delta;
+
         // Entites en jeu.
         std::unique_ptr<Paddle> paddle;
         std::vector<std::unique_ptr<Brick>> bricks;
         std::vector<Ball> balls;
-};
+
+        void update_status() ;
+};      
 
 #endif

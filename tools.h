@@ -40,16 +40,16 @@ double norm(const Point& p);
 
 double distance(const Point& p1, const Point& p2);
 
-bool intersects(const Square& s1, const Square& s2);
+bool intersects(const Square& s1, const Square& s2, double epsilon);
 
-bool intersects(const Circle& c1, const Circle& c2);
+bool intersects(const Circle& c1, const Circle& c2, double epsilon);
 
-bool intersects(const Circle& c, const Square& s);
-bool intersects(const Square& s, const Circle& c);
+bool intersects(const Circle& c, const Square& s, double epsilon);
+bool intersects(const Square& s, const Circle& c, double epsilon);
 
-bool intersects_with_epsil(const Square& s1, const Square& s2);
-bool intersects_with_epsil(const Circle& c1, const Circle& c2);
-bool intersects_with_epsil(const Circle& c, const Square& s);
-bool intersects_with_epsil(const Square& s, const Circle& c);
+
+double dot_product(const Point& u, const Point& v);
+
+Point projection(const Point& u, const Point& v);
 
 #endif

@@ -110,6 +110,11 @@ void RainbowBrick::draw() const
     square.draw(color);
 }
 
+void RainbowBrick::hit()
+{
+    hit_points -= 1;
+}
+
 void BallBrick::draw() const
 {
     square.draw(RED);

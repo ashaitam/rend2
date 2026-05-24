@@ -120,7 +120,7 @@ void My_window::restart_clicked()
 
 void My_window::start_clicked()
 {
-    if (!load_success)
+    if (!load_success || game.get_status() != ON_GOING)
     {
         return;
     }
@@ -143,14 +143,18 @@ void My_window::start_clicked()
 
 void My_window::step_clicked()
 {
-    if (!load_success)
+    if (!load_success || game.get_status() != ON_GOING)
     {
         return;
     }
 
-    game.update_paddle_pos(paddle_target_x);
+    // Déplacement continu du paddle selon la cible de la souris 
+    //Avancement de la physique des balles
+    game.update(paddle_target_x);
+    
     update_infos();
     drawing.queue_draw();
+    update_button_states(); // Rafraîchit les états si le pas de temps a fini le jeu
 }
 
 void My_window::set_key_controller()
@@ -271,7 +275,17 @@ bool My_window::loop()
 {
     if (loop_activated)
     {
-        game.update_paddle_pos(paddle_target_x);
+        if (game.get_status() != ON_GOING)
+        {
+            loop_conn.disconnect();
+            loop_activated = false;
+            buttons[START].set_label("start");
+            update_button_states();
+            return false;
+        }
+
+        game.update(paddle_target_x);
+        
         update_infos();
         drawing.queue_draw();
         return true;
@@ -340,6 +354,31 @@ void My_window::set_mouse_controller()
 
 void My_window::on_drawing_left_click(int n_press, double x, double y)
 {
+    //Génération d'une balle si plus aucune en jeu
+    if (load_success && game.get_status() == ON_GOING && game.get_nb_balls() == 0 && game.get_lives() > 0)
+    {
+        const Paddle* paddle = game.get_paddle();
+        if (paddle != nullptr)
+        {
+            Circle pc = paddle->get_circle();
+            // Apparition au sommet de la raquette
+            Point spawn_center(pc.center.x, pc.center.y + pc.radius + new_ball_radius + epsil_zero);
+            Circle ball_circle(spawn_center, new_ball_radius);
+            Point ball_delta(0.0, new_ball_delta_norm);
+            
+            // Consomme une vie lors de la génération
+            // (La gestion interne de la soustraction de vie est gérée dans le modèle)
+            Ball b(ball_circle, ball_delta);
+            if (game.add_ball(b))
+            {
+                // La vie doit être retirée ici ou directement via une méthode dédiée de Game
+                update_infos();
+                drawing.queue_draw();
+                game.decrease_lives();
+                update_button_states();
+            }
+        }
+    }
 }
 
 void My_window::on_drawing_move(double x, double y)
@@ -347,10 +386,6 @@ void My_window::on_drawing_move(double x, double y)
     double width = (double)drawing.get_width();
     double height = (double)drawing.get_height();
     double side = std::min(width, height);
-    if (side <= 0.0)
-    {
-        return;
-    }
 
     double x_game = (x - (width - side) / 2.0) * (arena_size / side);
 
@@ -378,11 +413,25 @@ void My_window::sync_paddle_target()
 void My_window::update_button_states()
 {
     const bool has_file = !last_file.empty();
+    const bool is_ongoing = (game.get_status() == ON_GOING);
 
-    buttons[EXIT].set_sensitive(!loop_activated);
-    buttons[OPEN].set_sensitive(!loop_activated);
-    buttons[SAVE].set_sensitive(load_success && !loop_activated);
-    buttons[RESTART].set_sensitive(has_file && !loop_activated);
-    buttons[START].set_sensitive(load_success);
-    buttons[STEP].set_sensitive(load_success && !loop_activated);
+    // Si état final atteint, seuls exit, open, restart et save sont actifs.
+    if (!is_ongoing)
+    {
+        buttons[EXIT].set_sensitive(true);
+        buttons[OPEN].set_sensitive(true);
+        buttons[SAVE].set_sensitive(load_success);
+        buttons[RESTART].set_sensitive(has_file);
+        buttons[START].set_sensitive(false);
+        buttons[STEP].set_sensitive(false);
+    }
+    else
+    {
+        buttons[EXIT].set_sensitive(!loop_activated);
+        buttons[OPEN].set_sensitive(!loop_activated);
+        buttons[SAVE].set_sensitive(load_success && !loop_activated);
+        buttons[RESTART].set_sensitive(has_file && !loop_activated);
+        buttons[START].set_sensitive(load_success);
+        buttons[STEP].set_sensitive(load_success && !loop_activated);
+    }
 }

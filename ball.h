@@ -16,6 +16,9 @@ class Ball {
     bool is_valid() const;
 
     void draw() const;
+    void move();
+    void reverse_move();
+    void set_delta(const Point& new_delta);
 
     private : 
     Circle circle;

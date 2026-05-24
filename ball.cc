@@ -34,3 +34,21 @@ void Ball::draw() const
 {
     circle.draw(BLACK);
 }
+
+void Ball::move()
+{
+    circle.center.x += delta.x;
+    circle.center.y += delta.y;
+}
+
+void Ball::reverse_move()
+{
+    circle.center.x -= delta.x;
+    circle.center.y -= delta.y;
+}
+
+void Ball::set_delta(const Point& new_delta)
+{
+    delta.x = new_delta.x;
+    delta.y = new_delta.y;
+}
